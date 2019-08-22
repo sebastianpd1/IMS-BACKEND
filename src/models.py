@@ -4,6 +4,9 @@ import datetime
 
 db = SQLAlchemy()
 
+##########################################################################################################
+############################################ PRODUCTS TABLE ##############################################
+##########################################################################################################
 
 
 class Products(db.Model):
@@ -14,6 +17,7 @@ class Products(db.Model):
     quantity = db.Column(db.Integer, nullable=True)
     #ACA ABAJO ESTAN MIS RELACIONES CON LAS DEMAS TABLAS
     purchases = db.relationship("Transactions", back_populates="products")
+    sales = db.relationship("Transactions", back_populates="products")
 
     def serialize(self):
         return {
@@ -22,8 +26,13 @@ class Products(db.Model):
             "description": self.description,
             "quantity": self.quantity,
             #ACA ABAJO HAGO SERIALIZACION PARA LAS RELACIONES CON LAS DEMAS TABLAS
-            "purchases": list(map(lambda x: x.serialize(), self.purchases)),
+            "transactions": list(map(lambda x: x.serialize(), self.purchases)),
         }
+
+
+##########################################################################################################
+############################################ PURCHASES TABLE ##############################################
+##########################################################################################################
 
 
 class Purchases(db.Model):
@@ -40,64 +49,67 @@ class Purchases(db.Model):
             "id":self.id,
             "date": self.created_at,
             #ACA ABAJO HAGO SERIALIZACION PARA LAS RELACIONES CON LAS DEMAS TABLAS
-            "products": list(map(lambda x: x.serialize(), self.products)),
+            "products": list(map(lambda x: x.serialize(), self.products))
         }
 
-class Sales(db.Model):
+##########################################################################################################
+############################################ SALES TABLE ##############################################
+##########################################################################################################
 
+
+class Sales(db.Model):
+    __tablename__ = 'sales'
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.Date, default=datetime.datetime.now())
+    #ACA ABAJO ESTAN MIS RELACIONES CON LAS DEMAS TABLAS
+    products = db.relationship("Transactions", back_populates="sales")
 
     def serialize(self):
         return {
             "id":self.id,
             "date": self.created_at,
+            #ACA ABAJO HAGO SERIALIZACION PARA LAS RELACIONES CON LAS DEMAS TABLAS
+            "products": list(map(lambda x: x.serialize(), self.products))
         }
+
+##########################################################################################################
+############################################ TRANSACTIONS TABLE ##############################################
+##########################################################################################################
 
 class Transactions(db.Model):
 
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    purchases_id = db.Column(db.Integer, db.ForeignKey('purchases.id'), primary_key=True)
-    products_id = db.Column(db.Integer, db.ForeignKey('products.id'), primary_key=True)
+    purchases_id = db.Column(db.Integer, db.ForeignKey('purchases.id'), nullable=True)
+    sales_id = db.Column(db.Integer, db.ForeignKey('sales.id'), nullable=True)
+    products_id = db.Column(db.Integer, db.ForeignKey('products.id'))
     quantity = db.Column(db.Integer, nullable=False)
     #ACA ABAJO ESTAN MIS RELACIONES CON LAS DEMAS TABLAS
     products = db.relationship("Products", back_populates="purchases")
     purchases = db.relationship("Purchases", back_populates="products")
+    sales = db.relationship("Sales", back_populates="products")
 
-    def __init__(self, products_id, purchases_id, quantity):
+    def __init__(self, products_id, purchases_id, sales_id, quantity):
         self.purchases_id = purchases_id
         self.products_id = products_id
+        self.sales_id = sales_id
         self.quantity = quantity
 
     def serialize(self):
         return {
             "id":self.id,
-            "purchases_id": self.purchases_id,
             "products_id": self.products_id,
-            "quantity": self.quantity,
+            "purchases_id": self.purchases_id,
+            "sales_id": self.sales_id,
+            "quantity": self.quantity
         }
 
-    @hybrid_method
-    def purchasesTotal(self,products_id):
-        t = list(map(lambda x: x.serialize(), Transactions.query.filter_by(purchases_id=products_id)))
-        total = 0
-        for e in t:
-            total += int(e["quantity"])
-        return str(total)
-
-    # def sum(self, id):
-    #     t = list(map(lambda x: x.serialize(), Transactions.query_all()))
-    #     t = list(filter(lambda x: x.purchases_id == id, t))
-
+    # @hybrid_method
+    # def purchasesTotal(self,products_id):
+    #     t = list(map(lambda x: x.serialize(), Transactions.query.filter_by(purchases_id=products_id)))
     #     total = 0
     #     for e in t:
-    #         total += int(e.quantity)
+    #         total += int(e["quantity"])
+    #     return str(total)
 
-    #     return total
-
-    #  def __init__(self, products, quantity):
-
-    #     self.products = products
-    #     self.quantity = quantity
 
