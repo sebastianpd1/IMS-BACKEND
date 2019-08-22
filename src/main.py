@@ -38,7 +38,7 @@ def productsAllGet():
         missing_item = verify_json(body,'item','description')
         if missing_item:
             raise APIException('You need to specify the ' + missing_item, status_code=400)
-        products = Products(item=body['item'], description=body['description'])
+        products = Products(item=body['item'], description=body['description'], quantity=body['quantity'])
         db.session.add(products)
         db.session.commit()
         all_products = Products.query.filter().order_by(Products.item)
@@ -139,6 +139,8 @@ def transactionsNewPost():
         if missing_item:
             raise APIException('You need to specify the ' + missing_item, status_code=400)
         transactions = Transactions(purchases_id=body['purchases_id'], products_id=body['products_id'], quantity=body['quantity'])
+        products = Products.query.get(body['products_id'])
+        products.quantity = int(products.quantity) + body['quantity']
         db.session.add(transactions)
         db.session.commit()
         all_transactions = Transactions.query.filter().order_by(Transactions.id)
@@ -156,8 +158,15 @@ def transactionsNewPost():
     return "Invalid Method", 404
 
 
-############################################ GET ALL / CREATE A NEW ONE TRANSACTIONS ############################################
+############################################ GET THE TOTAL QTY OF A PARTICULAR PRODUCT ############################################
+#the id, HAS to be related to a particular product
 
+@app.route('/transactions/total/<int:products_id>', methods=['GET', 'POST'])
+
+def productsTotalQuantity(products_id):
+
+    transactions =  Transactions.query.get(products_id)
+    return transactions.purchasesTotal(products_id), 200
 
 
 

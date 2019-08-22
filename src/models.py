@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 import datetime
 
 db = SQLAlchemy()
@@ -11,6 +11,7 @@ class Products(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(120), nullable=False)
+    quantity = db.Column(db.Integer, nullable=True)
     #ACA ABAJO ESTAN MIS RELACIONES CON LAS DEMAS TABLAS
     purchases = db.relationship("Transactions", back_populates="products")
 
@@ -19,6 +20,7 @@ class Products(db.Model):
             "id":self.id,
             "item": self.item,
             "description": self.description,
+            "quantity": self.quantity,
             #ACA ABAJO HAGO SERIALIZACION PARA LAS RELACIONES CON LAS DEMAS TABLAS
             "purchases": list(map(lambda x: x.serialize(), self.purchases)),
         }
@@ -63,6 +65,11 @@ class Transactions(db.Model):
     products = db.relationship("Products", back_populates="purchases")
     purchases = db.relationship("Purchases", back_populates="products")
 
+    def __init__(self, products_id, purchases_id, quantity):
+        self.purchases_id = purchases_id
+        self.products_id = products_id
+        self.quantity = quantity
+
     def serialize(self):
         return {
             "id":self.id,
@@ -71,13 +78,13 @@ class Transactions(db.Model):
             "quantity": self.quantity,
         }
 
-    @hybrid_property
-    def purchasesTotal(self,id=4):
-        t = list(map(lambda x: x.serialize(), Transactions.query.filter_by(purchases_id=id)))
+    @hybrid_method
+    def purchasesTotal(self,products_id):
+        t = list(map(lambda x: x.serialize(), Transactions.query.filter_by(purchases_id=products_id)))
         total = 0
         for e in t:
-            total += int(e.quantity)
-        return total
+            total += int(e["quantity"])
+        return str(total)
 
     # def sum(self, id):
     #     t = list(map(lambda x: x.serialize(), Transactions.query_all()))
