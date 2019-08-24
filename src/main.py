@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap, verify_json
-from models import db, Products, Purchases, Sales, Transactions
+from models import db, Products, Purchases, Sales, Transactions, Warehouses
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -189,7 +189,7 @@ def transactionsNewPost():
         missing_item = verify_json(body,'purchases_id','products_id','quantity')
         if missing_item:
             raise APIException('You need to specify the ' + missing_item, status_code=400)
-        transactions = Transactions(purchases_id=body['purchases_id'], products_id=body['products_id'], sales_id=body['sales_id'], quantity=body['quantity'])
+        transactions = Transactions(purchases_id=body['purchases_id'], products_id=body['products_id'], sales_id=body['sales_id'], quantity=body['quantity'], warehouses_id=body['warehouses_id'])
         products = Products.query.get(body['products_id'])
         products.quantity = int(products.quantity) + body['quantity']
         db.session.add(transactions)
@@ -209,10 +209,37 @@ def transactionsNewPost():
     return "Invalid Method", 404
 
 
+##########################################################################################################
+############################################ WAREHOUSE TABLE ##############################################
+##########################################################################################################
+
+############################################ GET ALL WAREHOUSES ############################################
+
+ # ONLY GETTING ALL WAREHOUSES, SINCE THEY ARE HARDCODED IN DB VIA PHPMYADMIN
+
+@app.route('/warehouses/all', methods=['GET'])
+
+def warehousesAllGet():
+
+ # GET request
+
+    all_warehouses = Warehouses.query.all()
+    all_warehouses = list(map(lambda e: e.serialize(), all_warehouses))
+    return jsonify(all_warehouses), 200
+
+
+
+
+
+
+
+
+
+
 ############################################ GET THE TOTAL QTY OF A PARTICULAR PRODUCT ############################################
 #the id, HAS to be related to a particular product
 
-@app.route('/transactions/total/<int:products_id>', methods=['GET', 'POST'])
+@app.route('/transactions/product/<int:products_id>', methods=['GET', 'POST'])
 
 def productsTotalQuantity(products_id):
 
