@@ -38,9 +38,9 @@ def productsAllGet():
     if request.method == 'POST':
 
         body = request.get_json()
-        missing_item = verify_json(body,'item','description')
-        if missing_item:
-            raise APIException('You need to specify the ' + missing_item, status_code=400)
+        #missing_item = verify_json(body,'item','description')
+        #if missing_item:
+         #   raise APIException('You need to specify the ' + missing_item, status_code=400)
         products = Products(item=body['item'], description=body['description'], quantity=body['quantity'])
         db.session.add(products)
         db.session.commit()
@@ -178,7 +178,7 @@ def salesDelete(sales_id):
 
 ############################################ GET ALL / CREATE A NEW ONE TRANSACTIONS ############################################
 
-@app.route('/transactions/new/beta', methods=['GET', 'POST'])
+@app.route('/transactions/new/beta/', methods=['GET', 'POST'])
 
 def transactionsNewPostbeta():
 
@@ -187,7 +187,7 @@ def transactionsNewPostbeta():
     if request.method == 'POST':
 
         body = request.get_json()
-        missing_item = verify_json(body,'products_id','quantity')
+        missing_item = verify_json(body,'products_id','quantity','sales_id')
         if missing_item:
            raise APIException('You need to specify the ' + missing_item, status_code=400)
         purchases = Purchases()
