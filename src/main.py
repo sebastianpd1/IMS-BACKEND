@@ -187,7 +187,7 @@ def transactionsNewPostbeta():
     if request.method == 'POST':
 
         body = request.get_json()
-        missing_item = verify_json(body,'products_id','quantity','sales_id')
+        missing_item = verify_json(body,'products_id','quantity')
         if missing_item:
            raise APIException('You need to specify the ' + missing_item, status_code=400)
         purchases = Purchases()
