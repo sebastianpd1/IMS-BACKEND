@@ -20,6 +20,15 @@ def has_no_empty_params(rule):
     arguments = rule.arguments if rule.arguments is not None else ()
     return len(defaults) >= len(arguments)
 
+def verify_json(body, *args):
+    for e in body:
+        if e is None:
+            return 'request body as an json object'
+        for prop in args:
+            if prop not in e:
+                return prop
+        return None
+
 def generate_sitemap(app):
     links = []
     for rule in app.url_map.iter_rules():
