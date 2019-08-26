@@ -3,8 +3,11 @@ from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
+from sqlalchemy import func
 from utils import APIException, generate_sitemap, verify_json
 from models import db, Products, Purchases, Sales, Transactions, Warehouses
+import json
+from flask_jwt_simple import JWTManager, jwt_required, create_jwt, get_jwt_identity
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -169,6 +172,51 @@ def salesDelete(sales_id):
     return "Invalid Method", 404
 
 
+##########################################################################################################
+############################################ TRANSACTIONS BETA TABLE ##############################################
+##########################################################################################################
+
+############################################ GET ALL / CREATE A NEW ONE TRANSACTIONS ############################################
+
+@app.route('/transactions/new/beta', methods=['GET', 'POST'])
+
+def transactionsNewPostbeta():
+
+    # POST request
+
+    if request.method == 'POST':
+
+        body = request.get_json()
+        missing_item = verify_json(body,'products_id','quantity')
+        if missing_item:
+           raise APIException('You need to specify the ' + missing_item, status_code=400)
+        purchases = Purchases()
+        db.session.add(purchases)
+        db.session.commit()
+        purchases_id = purchases.id
+        for e in body:
+          e["purchases_id"]=purchases_id
+        for e in body:
+            transactions = Transactions(purchases_id=e['purchases_id'], products_id=e['products_id'], sales_id=e['sales_id'], quantity=e['quantity'], warehouses_id=e['warehouses_id'])
+            db.session.add(transactions)
+        for e in body:
+            products = Products.query.get(e['products_id'])
+            products.quantity = int(products.quantity) + e['quantity']
+        db.session.commit()
+        all_transactions = Transactions.query.filter().order_by(Transactions.id)
+        all_transactions = list(map(lambda e: e.serialize(), all_transactions))
+        return jsonify(all_transactions), 200
+
+    # GET request
+
+    if request.method == 'GET':
+
+        all_transactions = Transactions.query.all()
+        all_transactions = list(map(lambda e: e.serialize(), all_transactions))
+        return jsonify(all_transactions), 200
+
+    return "Invalid Method", 404
+
 
 
 ##########################################################################################################
@@ -186,9 +234,9 @@ def transactionsNewPost():
     if request.method == 'POST':
 
         body = request.get_json()
-        missing_item = verify_json(body,'purchases_id','products_id','quantity')
-        if missing_item:
-            raise APIException('You need to specify the ' + missing_item, status_code=400)
+        #missing_item = verify_json(body,'purchases_id','products_id','quantity')
+        #if missing_item:
+        #    raise APIException('You need to specify the ' + missing_item, status_code=400)
         transactions = Transactions(purchases_id=body['purchases_id'], products_id=body['products_id'], sales_id=body['sales_id'], quantity=body['quantity'], warehouses_id=body['warehouses_id'])
         products = Products.query.get(body['products_id'])
         products.quantity = int(products.quantity) + body['quantity']
@@ -217,7 +265,7 @@ def transactionsNewPost():
 
  # ONLY GETTING ALL WAREHOUSES, SINCE THEY ARE HARDCODED IN DB VIA PHPMYADMIN
 
-@app.route('/warehouses/all', methods=['GET'])
+@app.route('/warehouses/all/', methods=['GET'])
 
 def warehousesAllGet():
 
@@ -228,27 +276,87 @@ def warehousesAllGet():
     return jsonify(all_warehouses), 200
 
 
-
-
-
-
-
-
-
-
-############################################ GET THE TOTAL QTY OF A PARTICULAR PRODUCT ############################################
+############################################ GET THE TOTAL QTY OF A PARTICULAR WAREHOUSE ############################################
 #the id, HAS to be related to a particular product
 
-@app.route('/transactions/product/<int:products_id>', methods=['GET', 'POST'])
+@app.route('/warehouses/total/<int:warehouse_id>', methods=['GET', 'POST'])
 
-def productsTotalQuantity(products_id):
+def productsTotalQuantity(warehouse_id):
 
-    transactions =  Transactions.query.get(products_id)
-    return transactions.purchasesTotal(products_id), 200
+    gtrans = db.session.query(
+    Transactions.warehouses_id,func.sum(Transactions.quantity)
+    ).group_by(Transactions.warehouses_id).all()
+
+    gtrans = [list(i) for i in gtrans]
+
+    for t in gtrans:
+        print(int(t[1]))
+
+    return str(gtrans[warehouse_id][1]), 200
+
+    #main = 1
+    #motorcycle1=1
+    #motorcycle2=2
+    #motorcycle3=3
 
 
+############################################ GET THE TOTAL QTY OF ALL WAREHOUSES ############################################
+#the id, HAS to be related to a particular product
 
-############################################ PURCHASES TABLE ############################################
+@app.route('/warehouses/all/total/', methods=['GET', 'POST'])
+
+def productsTotalQuantityAll():
+
+    gtrans = db.session.query(
+    Transactions.warehouses_id,func.sum(Transactions.quantity)
+    ).group_by(Transactions.warehouses_id).all()
+
+    gtrans = [list(i) for i in gtrans]
+
+    total = int(gtrans[1][1]) + int(gtrans[2][1]) + int(gtrans[3][1]) + int(gtrans[4][1])
+
+   #for t in gtrans:
+   #    print(int(t[1]))
+
+    return str(total), 200
+
+    #main = 1
+    #motorcycle1=1
+    #motorcycle2=2
+    #motorcycle3=3
+
+##########################################################################################################
+############################################ Jonathan's Login ##############################################
+##########################################################################################################
+
+# Setup the Flask-JWT-Simple extension
+app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
+jwt = JWTManager(app)
+
+
+# Provide a method to create access tokens. The create_jwt()
+# function is used to actually generate the token
+@app.route('/login', methods=['POST'])
+def login():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+
+    params = request.get_json()
+    username = params.get('username', None)
+    password = params.get('password', None)
+
+    if not username:
+        return jsonify({"msg": "Missing username parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+
+    if username != 'test' or password != 'test':
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    # Identity can be any data that is json serializable
+    ret = {'jwt': create_jwt(identity=username)}
+    return jsonify(ret),  200
+
 
 
 if __name__ == '__main__':

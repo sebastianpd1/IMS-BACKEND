@@ -16,6 +16,7 @@ python-dotenv = "*"
 mysql-connector-python = "*"
 flask-cors = "*"
 gunicorn = "*"
+flask-jwt-simple = "*"
 
 [requires]
 python_version = "3.6"
