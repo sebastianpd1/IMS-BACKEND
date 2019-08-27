@@ -138,3 +138,26 @@ class Warehouses(db.Model):
             #ACA ABAJO HAGO SERIALIZACION PARA LAS RELACIONES CON LAS DEMAS TABLAS
             "products": list(map(lambda x: x.serialize(), self.products))
         }
+
+##########################################################################################################
+############################################ LOGIN TABLE #############################################
+##########################################################################################################
+
+class User(db.Model):
+   id = db.Column(db.Integer, primary_key=True)
+   name = db.Column(db.String(50))
+   last_name = db.Column(db.String(50))
+   username = db.Column(db.String(50))
+   email = db.Column(db.String(50))
+   password = db.Column(db.String(50))
+
+   def serialize(self):
+       return {
+           "id":self.id,
+           "name": self.name,
+           "last_name": self.last_name,
+           "username": self.username,
+           "email": self.email,
+           "password": self.password,
+
+       }

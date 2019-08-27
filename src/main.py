@@ -5,7 +5,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from sqlalchemy import func
 from utils import APIException, generate_sitemap, verify_json, verify_json_single
-from models import db, Products, Purchases, Sales, Transactions, Warehouses
+from models import db, Products, Purchases, Sales, Transactions, Warehouses, User
 import json
 from flask_jwt_simple import JWTManager, jwt_required, create_jwt, get_jwt_identity
 
@@ -351,30 +351,91 @@ def productsTotalQuantityAll():
 # Setup the Flask-JWT-Simple extension
 app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
 jwt = JWTManager(app)
-
-
 # Provide a method to create access tokens. The create_jwt()
 # function is used to actually generate the token
 @app.route('/login', methods=['POST'])
 def login():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
-
     params = request.get_json()
     username = params.get('username', None)
     password = params.get('password', None)
-
     if not username:
         return jsonify({"msg": "Missing username parameter"}), 400
     if not password:
         return jsonify({"msg": "Missing password parameter"}), 400
-
-    if username != 'test' or password != 'test':
+    usercheck = User.query.filter_by(username=username, password=password).first()
+    if usercheck == None:
         return jsonify({"msg": "Bad username or password"}), 401
-
     # Identity can be any data that is json serializable
     ret = {'jwt': create_jwt(identity=username)}
     return jsonify(ret),  200
+
+@app.route('/user', methods=['POST', 'GET'])
+# @jwt_required
+def handle_user():
+    """
+    Create user and retrieve all users
+    """
+    # POST request
+    if request.method == 'POST':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        if 'username' not in body:
+            raise APIException('You need to specify the username', status_code=400)
+        if 'password' not in body:
+            raise APIException('You need to specify the password', status_code=400)
+        user1 = User(username=body['username'], email=body['email'], name=body['name'], last_name=body['last_name'], password=body['password'])
+        db.session.add(user1)
+        db.session.commit()
+        return "The User was added.", 200
+    # GET request
+    if request.method == 'GET':
+        all_people = User.query.all()
+        all_people = list(map(lambda x: x.serialize(), all_people))
+        return jsonify(all_people), 200
+    return "Invalid Method", 404
+@app.route('/user/<int:user_id>', methods=['PUT', 'GET', 'DELETE'])
+def get_single_user(user_id):
+    """
+    Single user
+    """
+    # PUT request
+    if request.method == 'PUT':
+        body = request.get_json()
+        if body is None:
+            raise APIException("You need to specify the request body as a json object", status_code=400)
+        user1 = User.query.get(user_id)
+        if user1 is None:
+            raise APIException('User not found', status_code=404)
+        if "username" in body:
+            user1.username = body["username"]
+        if "email" in body:
+            user1.email = body["email"]
+        if "password" in body:
+            user1.password = body["password"]
+        if "last_name" in body:
+            user1.last_name = body["last_name"]
+        if "name" in body:
+            user1.name = body["name"]
+        db.session.commit()
+        return jsonify(user1.serialize()), 200
+    # GET request
+    if request.method == 'GET':
+        user1 = User.query.get(user_id)
+        if user1 is None:
+            raise APIException('User not found', status_code=404)
+        return jsonify(user1.serialize()), 200
+    # DELETE request
+    if request.method == 'DELETE':
+        user1 = User.query.get(user_id)
+        if user1 is None:
+            raise APIException('User not found', status_code=404)
+        db.session.delete(user1)
+        db.session.commit()
+        return "ok", 200
+    return "Invalid Method", 404
 
 
 
