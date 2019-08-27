@@ -396,6 +396,7 @@ def handle_user():
         all_people = list(map(lambda x: x.serialize(), all_people))
         return jsonify(all_people), 200
     return "Invalid Method", 404
+
 @app.route('/user/<int:user_id>', methods=['PUT', 'GET', 'DELETE'])
 def get_single_user(user_id):
     """
