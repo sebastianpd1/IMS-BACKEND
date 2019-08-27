@@ -144,20 +144,21 @@ class Warehouses(db.Model):
 ##########################################################################################################
 
 class User(db.Model):
-   id = db.Column(db.Integer, primary_key=True)
-   name = db.Column(db.String(50))
-   last_name = db.Column(db.String(50))
-   username = db.Column(db.String(50))
-   email = db.Column(db.String(50))
-   password = db.Column(db.String(50))
+    __tablename__ = 'user'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50))
+    username = db.Column(db.String(50))
+    email = db.Column(db.String(50))
+    password = db.Column(db.String(50))
 
-   def serialize(self):
-       return {
-           "id":self.id,
-           "name": self.name,
-           "last_name": self.last_name,
-           "username": self.username,
-           "email": self.email,
-           "password": self.password,
+    def serialize(self):
+        return {
+            "id":self.id,
+            "name": self.name,
+            "last_name": self.last_name,
+            "username": self.username,
+            "email": self.email,
+            "password": self.password,
 
-       }
+        }
