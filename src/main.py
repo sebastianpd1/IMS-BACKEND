@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
 from sqlalchemy import func
-from utils import APIException, generate_sitemap, verify_json
+from utils import APIException, generate_sitemap, verify_json, verify_json_single
 from models import db, Products, Purchases, Sales, Transactions, Warehouses
 import json
 from flask_jwt_simple import JWTManager, jwt_required, create_jwt, get_jwt_identity
@@ -38,9 +38,9 @@ def productsAllGet():
     if request.method == 'POST':
 
         body = request.get_json()
-        #missing_item = verify_json(body,'item','description')
-        #if missing_item:
-         #   raise APIException('You need to specify the ' + missing_item, status_code=400)
+        missing_item = verify_json_single(body,'item','description')
+        if missing_item:
+            raise APIException('You need to specify the ' + missing_item, status_code=400)
         products = Products(item=body['item'], description=body['description'], quantity=body['quantity'])
         db.session.add(products)
         db.session.commit()
@@ -178,7 +178,7 @@ def salesDelete(sales_id):
 
 ############################################ GET ALL / CREATE A NEW ONE TRANSACTIONS ############################################
 
-@app.route('/transactions/new/beta/', methods=['GET', 'POST'])
+@app.route('/transactions/new/map/', methods=['GET', 'POST'])
 
 def transactionsNewPostbeta():
 
@@ -187,15 +187,24 @@ def transactionsNewPostbeta():
     if request.method == 'POST':
 
         body = request.get_json()
-        missing_item = verify_json(body,'products_id','quantity')
+        missing_item = verify_json(body,'products_id','quantity','warehouses_id')
         if missing_item:
            raise APIException('You need to specify the ' + missing_item, status_code=400)
-        purchases = Purchases()
-        db.session.add(purchases)
-        db.session.commit()
-        purchases_id = purchases.id
-        for e in body:
-          e["purchases_id"]=purchases_id
+        if 'sales_id' in body[0]:
+            purchases = Purchases()
+            db.session.add(purchases)
+            db.session.commit()
+            purchases_id = purchases.id
+            for e in body:
+                e["purchases_id"]=purchases_id
+        else:
+            sales = Sales()
+            db.session.add(sales)
+            db.session.commit()
+            sales_id = sales.id
+            for e in body:
+                e["sales_id"]=sales_id
+
         for e in body:
             transactions = Transactions(purchases_id=e['purchases_id'], products_id=e['products_id'], sales_id=e['sales_id'], quantity=e['quantity'], warehouses_id=e['warehouses_id'])
             db.session.add(transactions)
@@ -234,9 +243,9 @@ def transactionsNewPost():
     if request.method == 'POST':
 
         body = request.get_json()
-        #missing_item = verify_json(body,'purchases_id','products_id','quantity')
-        #if missing_item:
-        #    raise APIException('You need to specify the ' + missing_item, status_code=400)
+        missing_item = verify_json_single(body,'purchases_id','products_id','quantity')
+        if missing_item:
+            raise APIException('You need to specify the ' + missing_item, status_code=400)
         transactions = Transactions(purchases_id=body['purchases_id'], products_id=body['products_id'], sales_id=body['sales_id'], quantity=body['quantity'], warehouses_id=body['warehouses_id'])
         products = Products.query.get(body['products_id'])
         products.quantity = int(products.quantity) + body['quantity']
@@ -265,9 +274,19 @@ def transactionsNewPost():
 
  # ONLY GETTING ALL WAREHOUSES, SINCE THEY ARE HARDCODED IN DB VIA PHPMYADMIN
 
-@app.route('/warehouses/all/', methods=['GET'])
+@app.route('/warehouses/all/', methods=['GET','POST'])
 
 def warehousesAllGet():
+
+# POST request
+    if request.method == 'POST':
+        body = request.get_json()
+        warehouses = Warehouses(warehouse_name=body['warehouse_name'], location=body['location'])
+        db.session.add(warehouses)
+        db.session.commit()
+        all_warehouses = Warehouses.query.filter().order_by(Warehouses.id)
+        all_warehouses = list(map(lambda e: e.serialize(), all_warehouses))
+        return jsonify(all_warehouses), 200
 
  # GET request
 
