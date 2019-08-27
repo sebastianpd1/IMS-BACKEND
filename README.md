@@ -101,7 +101,7 @@
 	}
 ```
 - First you should have a product with an initial quantity
-- Second: if it's a sale you must not include the `sales_id`, because it will be created automatically, and viceversa with `purchases`
+- Second: if it's a sale you must not include the `sales_id`, because it will be created automatically, and viceversa with `purchases`, but you must include purchases_id = null, and viceversa
 - third: you must set a `warehouse_id`, that's mandatory, consider the following:
 1.MAIN
 2.MOTORCYCLE1
