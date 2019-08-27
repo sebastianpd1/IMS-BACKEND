@@ -1,56 +1,122 @@
-# Flask Boilerplate for profesional development
+# EndPoints:
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io#https://github.com/4GeeksAcademy/flask-rest-hello.git)
-
-## Features
-
-- Extensive documentation [here](https://github.com/4GeeksAcademy/flask-rest-hello/tree/master/docs).
-- Integrated with Pipenv for package managing.
-- Fast deloyment to heroku with `$ pipenv run deploy`.
-- Use of `.env` file.
-- SQLAlchemy integration for database abstraction.
-
-## How to stat the project?
-
-There is an example API working with an example database. All your application code should be written inside the `./src/` folder.
-
-- src/main.py (it's were your endpoints should be coded)
-- src/models.py (your database tables and serialization logic)
-- src/utils.py (some reusable classes and functions)
-
-For a more detailed explanation look for the tutorial inside the `docs` folder.
-
-## Remember migrate every time you change your models
-
-You have to migreate and upgrade the migrations for every update your make to your models:
-```
-$ pipenv run migrate (to make the migrations)
-$ pipenv run upgrade  (to update your databse with the migrations)
+```md
+	•	/transactions/new/map
+	•	/purchases/all
+	•	/products/all
+	•	/sales/all
+  
 ```
 
+## INVENTORY `PRODUCTS` TABLE:
 
-# Manual Instalation for Ubuntu & Mac
+### TO `ADD` A NEW RECORD FOR "PRODUCTS" 	•	/products/all
 
-⚠️ Make sure you have `python 3.6+` and `MySQL` installed on your computer and MySQL is running, then run the following commands:
-```sh
-$ pipenv install (to install pip packages)
-$ pipenv run migrate (to create the database)
-$ pipenv run start (to start the flask webserver)
+```md	
+	Method: POST
+	/products/all
 ```
+- Body must contain the following:
 
-
-## Deploy your website to heroku
-
-This template is 100% compatible with heroku, just make sure to understand and execute the following steps
-
-```sh
-// Install heroku
-$ npm i heroku -g
-// Login to heroku on the command line
-$ heroku login -i
-// Create an application (if you don't have it already)
-$ heroku create <your_application_name>
-// Commit and push to heroku (commited your changes)
-$ git push heroku master
+```md	
+	 {
+  	 "item":"chocolate",
+	 "description":"food",
+	 "quantity":"7"
+         }
 ```
-:warning: For a more detailed explanation on working with .env variables or the MySQL database [read the full guide](https://github.com/4GeeksAcademy/flask-rest-hello/blob/master/docs/DEPLOY_YOUR_APP.md).
+- First: Item Name and description
+- Second: you must put an initial quantity
+
+### TO `GET ALL` RECORDS OF "PRODUCTS"
+
+```md	
+	Method: GET
+	/products/all
+```
+- Retrieves all records (products) and the related `Transactions` of each item
+
+
+## INVENTORY `PURCHASES` TABLE •	/purchases/all
+
+### TO `ADD` A NEW RECORD FOR "PURCHASES"
+
+```md	
+	Method: POST
+	/purchases/all
+```
+- Adds a record with `id` and `Creation Date`
+
+
+### TO `GET ALL` RECORDS OF "PURCHASES"
+
+```md	
+	Method: GET
+	/purchases/all
+```
+- Retrieves all records on this table, including the related products
+
+
+## INVENTORY `SALES` TABLE: 	•	/sales/all
+
+### TO `ADD` A NEW RECORD FOR "SALES"
+
+```md	
+	Method: POST
+	/sales/all
+```
+- Adds a record with `id` and `Creation Date`
+
+
+### TO `GET ALL` RECORDS OF "SALES"
+
+```md	
+	Method: GET
+	/sales/all
+```
+- Retrieves all records on this table, including the related product
+
+
+## INVENTORY `TRANSACTIONS` TABLE:
+
+### TO `ADD` A NEW RECORD FOR "TRANSACTIONS" (CAN BE IN OR OUT)
+
+```md	
+	Method: POST
+	/transactions/new
+```
+- Body must contain the following:
+(AT LEAST ONE OR MORE OBJECTS)
+
+```md	
+	{
+	"products_id":3,
+	"quantity":5,
+	"purchases_id": null
+	},
+  {
+	"products_id":4,
+	"quantity":5,
+	"purchases_id": null
+	}
+```
+- First you should have a product with an initial quantity
+- Second: if it's a sale you must not include the `sales_id`, because it will be created automatically, and viceversa with `purchases`, but you must include purchases_id = null, and viceversa
+- third: you must set a `warehouse_id`, that's mandatory, consider the following:
+1.MAIN
+2.MOTORCYCLE1
+3.MOTORCYCLE2
+4.MOTORCYCLE3 
+
+- If its a `PURCHASE` you should set the quantity amount to positive, if its `SALE` you should set it to negative (example : -3)
+
+### TO `GET ALL` RECORDS OF "TRANSACTIONS" •	/transactions/new/map
+
+```md	
+	Method: GET
+	/transactions/new/map
+```
+- Retrieves all records on this table
+
+
+
