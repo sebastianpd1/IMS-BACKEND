@@ -8,6 +8,8 @@ from utils import APIException, generate_sitemap, verify_json, verify_json_singl
 from models import db, Products, Purchases, Sales, Transactions, Warehouses, User
 import json
 from flask_jwt_simple import JWTManager, jwt_required, create_jwt, get_jwt_identity
+from twilio.rest import Client
+
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -437,6 +439,27 @@ def get_single_user(user_id):
         db.session.commit()
         return "ok", 200
     return "Invalid Method", 404
+
+##########################################################################################################
+############################################ TWILIO AND GPS ##############################################
+##########################################################################################################
+
+@app.route('/smstotwilio/', methods=['PUT', 'GET', 'DELETE'])
+def sendSms(phone):
+    # Your Account Sid and Auth Token from twilio.com/console
+    # DANGER! This is insecure. See http://twil.io/secure
+    account_sid = os.environ.get('ACCOUNTSID')
+    auth_token = os.environ.get('TWILIOTOKEN')
+    client = Client(account_sid, auth_token)
+
+    message = client.messages \
+                    .create(
+                        body="Your turn!",
+                        from_='+19384440856',
+                        to=phone
+                    )
+
+    print(message.sid)
 
 
 
