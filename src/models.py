@@ -126,7 +126,8 @@ class Warehouses(db.Model):
     __tablename__ = 'warehouses'
     id = db.Column(db.Integer, primary_key=True)
     warehouse_name = db.Column(db.String(80), nullable=False)
-    location = db.Column(db.String(80), nullable=False)
+    latitude = db.Column(db.Number(80), nullable=False)
+    longitude = db.Column(db.Number(80), nullable=False)
     #ACA ABAJO ESTAN MIS RELACIONES CON LAS DEMAS TABLAS
     products = db.relationship("Transactions", back_populates="warehouses")
 

@@ -9,7 +9,10 @@ from models import db, Products, Purchases, Sales, Transactions, Warehouses, Use
 import json
 from flask_jwt_simple import JWTManager, jwt_required, create_jwt, get_jwt_identity
 from twilio.rest import Client
-
+from send_sms import send_msg
+from twilio.twiml.messaging_response import MessagingResponse
+import requests
+import re
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -444,26 +447,59 @@ def get_single_user(user_id):
 ############################################ TWILIO AND GPS ##############################################
 ##########################################################################################################
 
-@app.route('/smstotwilio/', methods=['PUT', 'GET', 'DELETE'])
-def sendSms(phone):
+############################################ Send SMS from Backend to twilio ##############################################
+
+@app.route('/smstotwilio/<int:warehouse_id>', methods=['PUT', 'GET', 'DELETE'])
+def sendSms(warehouse_id):
     # Your Account Sid and Auth Token from twilio.com/console
     # DANGER! This is insecure. See http://twil.io/secure
-    account_sid = os.environ.get('ACCOUNTSID')
-    auth_token = os.environ.get('TWILIOTOKEN')
-    client = Client(account_sid, auth_token)
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    if(warehouse_id==1):
 
-    message = client.messages \
-                    .create(
-                        body="Your turn!",
-                        from_='+19384440856',
-                        to=phone
-                    )
+        client = Client(account_sid, auth_token)
 
-    print(message.sid)
+        message = client.messages \
+                        .create(
+                            body="999",
+                            from_='+19384440856',
+                            to='+17865577374'
+                        )
 
+        print(message.sid)
+
+        return "ok", 200
+
+############################################ Send SMS from device to twilio to backend ##############################################
+
+@app.route("/receivefromtwilio", methods=['GET', 'POST'])
+
+def sms():
+
+    number = request.form['From']
+    url = request.form['Body']
+
+    bike = 0
+    if number == '7865577374':
+        bike = 2
+
+    response = requests.get(url)
+    html_source_code = response.text
+    regex = r"post_gpstobaidu\.php\?location=(-?\d+\.\d+)\,(\d+\.\d+)',"
+    matches = re.finditer(regex, html_source_code, re.MULTILINE)
+    for matchNum, match in enumerate(matches, start=1):
+        latitude = match.group(2)
+        longitude = match.group(1)
+
+    warehouse = Warehouses.query.get(bike)
+    warehouse.latitude = latitude
+    warehouse.longitude = longitude
+    db.session.commit()
+    all_warehouses = Warehouses.query.filter().order_by(Warehouses.id)
+    all_warehouses = list(map(lambda e: e.serialize(), all_warehouses))
+    return jsonify(all_warehouses), 200
 
 
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT)
-
