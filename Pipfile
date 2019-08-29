@@ -20,6 +20,7 @@ flask-jwt-simple = "*"
 flask-jwt-extended = "*"
 mysqlclient = "*"
 twilio = "*"
+demjson = "*"
 
 [requires]
 python_version = "3.6"

@@ -4,15 +4,13 @@ from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
 from sqlalchemy import func
-from utils import APIException, generate_sitemap, verify_json, verify_json_single
+from utils import APIException, generate_sitemap, verify_json, verify_json_single, get_lat_long
 from models import db, Products, Purchases, Sales, Transactions, Warehouses, User
 import json
 from flask_jwt_simple import JWTManager, jwt_required, create_jwt, get_jwt_identity
 from twilio.rest import Client
-from send_sms import send_msg
 from twilio.twiml.messaging_response import MessagingResponse
 import requests
-import re
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -286,7 +284,7 @@ def warehousesAllGet():
 # POST request
     if request.method == 'POST':
         body = request.get_json()
-        warehouses = Warehouses(warehouse_name=body['warehouse_name'], location=body['location'])
+        warehouses = Warehouses(warehouse_name=body['warehouse_name'])
         db.session.add(warehouses)
         db.session.commit()
         all_warehouses = Warehouses.query.filter().order_by(Warehouses.id)
@@ -462,7 +460,7 @@ def sendSms(warehouse_id):
         message = client.messages \
                         .create(
                             body="999",
-                            from_='+19384440856',
+                            from_='+13346058062',
                             to='+17865577374'
                         )
 
@@ -477,26 +475,31 @@ def sendSms(warehouse_id):
 def sms():
 
     number = request.form['From']
-    url = request.form['Body']
+    print(number)
+    sms_text = request.form['Body']
+    print(sms_text)
 
-    bike = 0
-    if number == '7865577374':
-        bike = 2
-
+    bike = 1
+    if number == '+17865577374':
+        bike = 1
+    url = sms_text[sms_text.find(',')+1:]
+    print(url)
     response = requests.get(url)
     html_source_code = response.text
-    regex = r"post_gpstobaidu\.php\?location=(-?\d+\.\d+)\,(\d+\.\d+)',"
-    matches = re.finditer(regex, html_source_code, re.MULTILINE)
-    for matchNum, match in enumerate(matches, start=1):
-        latitude = match.group(2)
-        longitude = match.group(1)
 
+    coord = get_lat_long(html_source_code)
+    print(coord["latitude"])
+    print(coord["longitude"])
+    if coord is None:
+        return jsonify({ "msg": "Imposible to fetch latitude and longitud" }), 400
     warehouse = Warehouses.query.get(bike)
-    warehouse.latitude = latitude
-    warehouse.longitude = longitude
+    warehouse.latitude = str(coord["latitude"])
+    warehouse.longitude = str(coord["longitude"])
+
     db.session.commit()
     all_warehouses = Warehouses.query.filter().order_by(Warehouses.id)
     all_warehouses = list(map(lambda e: e.serialize(), all_warehouses))
+
     return jsonify(all_warehouses), 200
 
 

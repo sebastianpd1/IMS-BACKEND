@@ -126,8 +126,8 @@ class Warehouses(db.Model):
     __tablename__ = 'warehouses'
     id = db.Column(db.Integer, primary_key=True)
     warehouse_name = db.Column(db.String(80), nullable=False)
-    latitude = db.Column(db.Number(80), nullable=False)
-    longitude = db.Column(db.Number(80), nullable=False)
+    latitude = db.Column(db.String(80), nullable=True)
+    longitude = db.Column(db.String(80), nullable=True)
     #ACA ABAJO ESTAN MIS RELACIONES CON LAS DEMAS TABLAS
     products = db.relationship("Transactions", back_populates="warehouses")
 
@@ -135,7 +135,8 @@ class Warehouses(db.Model):
         return {
             "id":self.id,
             "warehouse_name": self.warehouse_name,
-            "location": self.location,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
             #ACA ABAJO HAGO SERIALIZACION PARA LAS RELACIONES CON LAS DEMAS TABLAS
             "products": list(map(lambda x: x.serialize(), self.products))
         }

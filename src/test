@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<link rel="shortcut icon" href="/images/favicon.ico">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="text/javascript">
+</script>
+<meta http-equiv="description" content=""/>
+<meta http-equiv="keywords" content=""/>
+<title>WIFI</title>
+
+
+<link href="css/type_style.css" rel="stylesheet" type="text/css" />
+<script src="js/jquery-1.11.1.min.js" type="text/javascript"></script>
+<script>
+        $(function() {
+
+        });
+        var player_start=1;
+        $(document).ready(function() {
+                try{
+                        initialize();
+                        $("#table_all_views").css("height", $( window ).height());
+                }catch(ex){
+                        alert("ready()-"+ex);
+                }
+        });
+        $( window ).resize(function() {
+                $("#table_all_views").css("height", $( window ).height()+"px");
+        });
+
+</script>
+<style type="text/css">
+body {
+        TEXT-ALIGN: center;
+}
+
+
+</style>
+
+<body>
+<div id="err_msg"></div>
+
+
+        <div id="divStaticMap" style="font-size:14px; margin:0 auto">
+
+
+                <hr />
+
+                <h1><div id="address"></div></h1>
+                <br /> <img id="imgMap" alt=""
+                        style="border:solid 2px gray; margin:10px auto; display:none;" src=""
+                        width="80%" />
+
+        </div>
+        <div style="text-align: center" width="64%">
+                <input class="zommin" type="button" id="zoomin" onClick="zoominclick()" value="放大 (Zoom In)" style="width: 40%;height:40px">
+                <input class="zoomout" type="button" id="zoomout" onClick="zoomoutclick()" value="缩小 (Zoom Out)" style="width: 40%; height: 40px">
+        </div>
+        <br />
+
+        <div style="text-align: center" width="64%">
+                <input class="googlemap" type="button" id="googlemap" onClick="getStaticGoogleMap(16);" value="谷歌地图 (Google Map)" style="width: 40%;height:40px">
+        </div>
+
+<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Fbc39e74764250d79ffdc33b2d4fdded0' type='text/javascript'%3E%3C/script%3E"));
+</script>
+</body>
+
+</html>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=1.5&ak=0Acbbb7b2febd6c4e65aea3e00b44848"></script>
+<script type="text/javascript" src="js/gps_convertor.js"></script>
+<script type="text/javascript">
+var map_type="baidu";
+//var map_type="google";
+var json=null;
+var targetLAT,targetLON;
+function initialize(){
+        var url = 'epost_minigps_wifi.php?x=136-104-72bb-3ba9-c&ta=1&p=1&mt=1&needaddress=0&imei=359339075779555&ip=35.245.134.117&url=www.08gps.com&wifi=1:74:1082937503385560484;2:93:564395181913226170'
+
+        $.ajax({
+    url: url,
+    dataType: 'json',
+    type: "GET",
+        error: function(xhr) {
+      alert('Ajax request 發生錯誤');
+    },
+    success: function(rjson) {
+                json=rjson;
+                reload();
+                }
+        });
+}
+
+function reload(){
+        //if(json["cause"]=="OK" && json["map"]=="baidu"){
+        if(json["cause"]=="OK"){
+                targetLAT = json["lat"];
+                targetLON =json["lon"];
+                //var point = new BMap.Point(targetLON , targetLAT);
+                //BMap.Convertor.translate(point,0,translateCallback);     //真实经纬度转成百度坐标
+
+                $("#address").text(json["address"]);
+                if(json["map"]=="baidu"){
+                        getStaticMap(15);
+                }else if(json["map"]=="google"){
+                        getStaticGoogleMap(16);
+                }else{
+                        alert("沒有MAP數據=>"+json["map"]);
+                }
+
+        }else{
+                alert("沒有定位數據=>"+json["cause"]);
+        }
+}
+
+function translateCallback(point1){
+   targetLAT = point1.lat;
+   targetLON = point1.lng;
+
+   $("#address").text(json["address"]);
+        getStaticMap(15);
+}
+</script>
+<script type="text/javascript">
+        var zoom = 15;
+                function zoominclick() {
+                                if(zoom < 19)
+                                {
+                                zoom = zoom + 1;
+                                getStaticMap(zoom);
+                                }
+
+                                        };
+                        function        zoomoutclick() {
+                                if(zoom > 3)
+                                {
+                                zoom = zoom - 1;
+                                getStaticMap(zoom);
+                                }
+                                        };
+
+
+        function getStaticMap(zoom) {
+                //http://api.map.baidu.com/staticimage?width=240&height=320&center=116.311887,39.914889&zoom=11
+                //http://developer.baidu.com/map/staticimg.htm
+                var url = 'http://api.map.baidu.com/staticimage?center=';
+
+                url += encodeURI(targetLON) + ',' + encodeURI(targetLAT); //经纬度
+
+                url += '&zoom=' + zoom; // 缩放等级  0-21
+
+                url += '&markers=' + encodeURI(targetLON+","+targetLAT);
+
+                url += '&markerStyles=' + "m";
+                url += '|' + "Y";
+
+                url += '|' + "red";
+
+                $('#imgMap').attr("src",url);
+
+                $('#imgMap').show();
+
+        }
+
+        function getStaticGoogleMap(zoom) {
+                $.ajax({
+                        url: 'epost_minigps_wifi.php',
+                        dataType: 'json',
+                        type: "GET",
+
+                        data: { x:"136-104-72bb-3ba9-c", ta:"1", p:"1"
+                        , mt:"2", needaddress:"0", imei:"359339075779555", ip:"35.245.134.117", url:"www.08gps.com"
+                        ,wifi:"1:74:1082937503385560484;2:93:564395181913226170"
+                        },
+
+                        error: function(xhr) {
+                          alert('Ajax request 發生錯誤');
+                        },
+                        success: function(rjson) {
+                                if(json["cause"]=="OK"){
+                                        parent.location='https://maps.google.com/maps?q='+json["lat"]+'+'+json["lon"]+'&ll='+json["lat"]+'%20'+json["lon"]+'&spn=0.004250%200.011579&t=m&iwloc=addr&hl=zh-CN&ie=UTF8&z='+zoom+'&om=1'
+                                }else{
+                                        alert("沒有定位數據=>"+rjson);
+                                }
+
+                        }
+                        });
+
+        }
+</script>
